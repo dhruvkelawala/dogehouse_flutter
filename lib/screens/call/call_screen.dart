@@ -1,5 +1,6 @@
 import 'package:dogehouse_flutter/provider/doge_provider.dart';
 import 'package:dogehouse_flutter/screens/call/call_chat.dart';
+import 'package:dogehouse_flutter/screens/call/call_listener.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,22 +29,32 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
     Size _size = MediaQuery.of(context).size;
-    print(_size.width);
     return Consumer<DogeProvider>(builder: (context, model, _) {
       return Scaffold(
           body: model.currentRoom != null
               ? Center(
-                  child: SafeArea(
-                      child: Row(children: [
-                    Expanded(
-                      flex: 1,
-                      child: Container(),
-                    ),
-                    Expanded(
-                      flex: 4,
-                      child: CallChat(),
-                    ),
-                  ])),
+            child: SafeArea(
+                      child: _size.width < 705
+                          ? Column(children: [
+                              Expanded(
+                                flex: 2,
+                                child: CallListener(),
+                              ),
+                              Expanded(
+                                flex: 5,
+                                child: CallChat(),
+                              ),
+                            ])
+                          : Row(children: [
+                              Expanded(
+                                flex: 2,
+                                child: CallListener(),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: CallChat(),
+                              ),
+                            ])),
                 )
               : Center(
                   child: CircularProgressIndicator(),

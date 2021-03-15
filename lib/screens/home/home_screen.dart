@@ -1,6 +1,8 @@
+import 'package:dogehouse_flutter/provider/doge_provider.dart';
 import 'package:dogehouse_flutter/resources/palette.dart';
 import 'package:dogehouse_flutter/utils/responsive.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'home_center.dart';
 import 'home_left.dart';
@@ -20,72 +22,80 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     Size _size = MediaQuery.of(context).size;
-    return SafeArea(
-      child: Scaffold(
-        drawer: _size.width <= 1100 ? Drawer(child: HomeLeft()) : null,
-        bottomNavigationBar: _size.width <= 693
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 1,
-                    color: Palette.separateLine,
+
+    return Consumer<DogeProvider>(builder: (context, model, _) {
+      return model.me != null
+          ? Scaffold(
+              drawer: _size.width <= 1100 ? Drawer(child: HomeLeft()) : null,
+              bottomNavigationBar: _size.width <= 693
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 1,
+                          color: Palette.separateLine,
+                        ),
+                        bottomNavBar(),
+                      ],
+                    )
+                  : null,
+              appBar: PreferredSize(
+                preferredSize: Size.fromHeight(30.0),
+                child: AppBar(
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  elevation: 0,
+                  automaticallyImplyLeading: false,
+                  actions: [Container()],
+                ),
+              ),
+              body: SafeArea(
+                child: Responsive(
+                  mobile: PageView(
+                    controller: pageController,
+                    physics: NeverScrollableScrollPhysics(),
+                    children: [
+                      HomeCenter(),
+                      HomeLeft(),
+                      HomeRight(),
+                    ],
                   ),
-                  bottomNavBar(),
-                ],
-              )
-            : null,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(30.0),
-          child: AppBar(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            actions: [Container()],
-          ),
-        ),
-        body: Responsive(
-          mobile: PageView(
-            controller: pageController,
-            physics: NeverScrollableScrollPhysics(),
-            children: [
-              HomeCenter(),
-              HomeLeft(),
-              HomeRight(),
-            ],
-          ),
-          tablet: Row(
-            children: [
-              Expanded(
-                flex: _size.width > 864 ? 5 : 5,
-                child: HomeCenter(),
+                  tablet: Row(
+                    children: [
+                      Expanded(
+                        flex: _size.width > 864 ? 5 : 5,
+                        child: HomeCenter(),
+                      ),
+                      Expanded(
+                        flex: _size.width > 781 ? 4 : 5,
+                        child: HomeRight(),
+                      ),
+                    ],
+                  ),
+                  desktop: Row(
+                    children: [
+                      Expanded(
+                        flex: _size.width > 1398 ? 2 : 2,
+                        child: HomeLeft(),
+                      ),
+                      Expanded(
+                        flex: _size.width > 1183 ? 6 : 5,
+                        child: HomeCenter(),
+                      ),
+                      Expanded(
+                        flex: _size.width > 1398 ? 3 : 4,
+                        child: HomeRight(),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              Expanded(
-                flex: _size.width > 781 ? 4 : 5,
-                child: HomeRight(),
-              ),
-            ],
-          ),
-          desktop: Row(
-            children: [
-              Expanded(
-                flex: _size.width > 1398 ? 2 : 2,
-                child: HomeLeft(),
-              ),
-              Expanded(
-                flex: _size.width > 1183 ? 6 : 5,
-                child: HomeCenter(),
-              ),
-              Expanded(
-                flex: _size.width > 1398 ? 3 : 4,
-                child: HomeRight(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+            )
+          : Scaffold(
+              body: Center(
+              child: CircularProgressIndicator(backgroundColor: Palette.primaryColor),
+            ));
+    });
   }
 
   Widget bottomNavBar() {

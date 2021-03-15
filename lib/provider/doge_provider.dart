@@ -19,9 +19,11 @@ class DogeProvider with ChangeNotifier {
   PublicRoomsQuery publicRoomsQuery = PublicRoomsQuery(rooms: []);
   ScheduledRoomsInfo scheduledRoomsInfo = ScheduledRoomsInfo(scheduledRooms: []);
 
+  BaseUser me;
   Room currRoom;
   CurrentRoom currentRoom;
   List<ChatModel> currMessages = [];
+  List<BaseUser> following = [];
 
   String getRandString(int len) {
     var random = Random.secure();
@@ -31,7 +33,9 @@ class DogeProvider with ChangeNotifier {
 
   Future<void> connectWS() async {
     if (authModel.accessToken == null || authModel.refreshToken == null) {
-      var res = await http.get(Uri.http(AppApi.apiBase, AppApi.apiDevLogin, {'username': getRandString(12)}));
+      var res420 = await http.post(Uri.https('randommer.io', '/Name'), body: {'type': 'fullname', 'number': '1'});
+
+      var res = await http.get(Uri.https(AppApi.apiBase, AppApi.apiDevLogin, {'username': jsonDecode(res420.body)[0]}));
       authModel = AuthModel.fromJson(jsonDecode(res.body));
     }
 
@@ -46,25 +50,108 @@ class DogeProvider with ChangeNotifier {
         var json = jsonDecode(message);
         debugPrint('Op: ' + json["op"].toString());
         switch (json["op"]) {
-          case "new-tokens":
-            authModel.accessToken = json["d"]["accessToken"];
-            authModel.refreshToken = json["d"]["refreshToken"];
+          case "new_room_details":
             break;
-          case "join_room_done":
-            currRoom = Room.fromJson(json["d"]["room"]);
-            notifyListeners();
-            break;
-          case "get_current_room_users_done":
-            currentRoom = CurrentRoom.fromJson(json["d"]);
-            notifyListeners();
+
+          case "chat_user_banned":
             break;
 
           case "new_chat_msg":
             currMessages.add(ChatModel.fromJson(json["d"]["msg"]));
             notifyListeners();
             break;
+
+          case "message_deleted":
+            break;
+
+          case "room_privacy_change":
+            break;
+
+          case "banned":
+            break;
+
+          case "ban_done":
+            break;
+
+          case "someone_you_follow_created_a_room":
+            break;
+
+          case "invitation_to_room":
+            break;
+
+          case "fetch_invite_list_done":
+            break;
+
+          case "fetch_following_online_done":
+            following = List.of(json["d"]["users"] ?? []).map((i) => BaseUser.fromJson(i)).toList();
+            notifyListeners();
+            break;
+
+          case "get_top_public_rooms_done":
+            break;
+
+          case "fetch_follow_list_done":
+            break;
+
+          case "follow_info_done":
+            break;
+
+          case "active_speaker_change":
+            break;
+
+          case "room_destroyed":
+            break;
+
+          case "new_room_creator":
+            break;
+
+          case "speaker_removed":
+            break;
+
+          case "speaker_added":
+            break;
+
+          case "setCurrentRoom":
+            break;
+
+          case "mod_changed":
+            break;
+
+          case "user_left_room":
+            break;
+
+          case "new_user_join_room":
+            break;
+
+          case "hand_raised":
+            break;
+
+          case "mute_changed":
+            currentRoom.muteMap[json["d"]["userId"]] = json["d"]["value"];
+            notifyListeners();
+            break;
+
+          case "get_current_room_users_done":
+            currentRoom = CurrentRoom.fromJson(json["d"]);
+            notifyListeners();
+            break;
+
+          case "new_current_room":
+            break;
+
+          case "join_room_done":
+            currRoom = Room.fromJson(json["d"]["room"]);
+            notifyListeners();
+            break;
+
+          case "new-tokens":
+            authModel.accessToken = json["d"]["accessToken"];
+            authModel.refreshToken = json["d"]["refreshToken"];
+            break;
+
           case "you-joined-as-peer":
-            //   l(json["d"]["recvTransportOptions"]["iceParameters"]["usernameFragment"], json["d"]["recvTransportOptions"]["iceParameters"]["password"]);
+            //  json["d"]["recvTransportOptions"]["iceParameters"]["password"]
+            //  json["d"]["recvTransportOptions"]["iceParameters"]["usernameFragment"]
             //  json["d"]["recvTransportOptions"]["iceCandidates"][0]["ip"]
             //  json["d"]["recvTransportOptions"]["iceCandidates"][0]["port"]
             break;
@@ -76,6 +163,7 @@ class DogeProvider with ChangeNotifier {
             useSocketStatus = UseSocketStatus.authGood;
             if (json["op"] == "auth-good") {
               authGood = true;
+              me = BaseUser.fromJson(json["d"]["user"]);
             }
             if (json["op"] == "fetch_done") {
               switch (json["d"].keys.toList()[0]) {
@@ -101,7 +189,31 @@ class DogeProvider with ChangeNotifier {
         debugPrint('ws error $error');
       },
     );
-    //  channel.sink.add(jsonEncode({"op": "get_my_scheduled_rooms_about_to_start", "d": {}, "fetchId": ""}));
+    channel.sink.add(jsonEncode({
+      "op": "follow",
+      "d": {"userId": "9a5f8653-deca-4356-8706-edcdd48d5e2b", "value": true}
+    }));
+    channel.sink.add(jsonEncode({
+      "op": "follow",
+      "d": {"userId": "371942a9-96cf-49ac-8c94-e24b9161869b", "value": true}
+    }));
+
+    getInfos();
+
+    Timer.periodic(new Duration(seconds: 8), (timer) {
+      if (useSocketStatus == UseSocketStatus.authGood) {
+        channel.sink.add("ping");
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  getInfos() async {
+    channel.sink.add(jsonEncode({
+      "op": "fetch_following_online",
+      "d": {"cursor": 0}
+    }));
     channel.sink.add(jsonEncode({
       "op": "get_scheduled_rooms",
       "d": {"cursor": "", "getOnlyMyScheduledRooms": false},
@@ -117,14 +229,7 @@ class DogeProvider with ChangeNotifier {
       "op": "fetch_following_online",
       "d": {"cursor": 0}
     }));
-
-    Timer.periodic(new Duration(seconds: 8), (timer) {
-      if (useSocketStatus == UseSocketStatus.authGood) {
-        channel.sink.add("ping");
-      } else {
-        timer.cancel();
-      }
-    });
+    return true;
   }
 
   leaveRoom() {
@@ -142,75 +247,6 @@ class DogeProvider with ChangeNotifier {
     }));
 
     channel.sink.add(jsonEncode({"op": "get_current_room_users", "d": {}}));
-
-    channel.sink.add(jsonEncode({
-      "op": "@get-recv-tracks",
-      "d": {
-        "rtpCapabilities": {
-          "codecs": [
-            {
-              "mimeType": "audio/opus",
-              "kind": "audio",
-              "preferredPayloadType": 100,
-              "clockRate": 48000,
-              "channels": 2,
-              "parameters": {"minptime": 10, "useinbandfec": 1},
-              "rtcpFeedback": [
-                {"type": "transport-cc", "parameter": ""}
-              ]
-            }
-          ],
-          "headerExtensions": [
-            {"kind": "audio", "uri": "urn:ietf:params:rtp-hdrext:sdes:mid", "preferredId": 1, "preferredEncrypt": false, "direction": "sendrecv"},
-            {"kind": "video", "uri": "urn:ietf:params:rtp-hdrext:sdes:mid", "preferredId": 1, "preferredEncrypt": false, "direction": "sendrecv"},
-            {
-              "kind": "audio",
-              "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time",
-              "preferredId": 4,
-              "preferredEncrypt": false,
-              "direction": "sendrecv"
-            },
-            {
-              "kind": "video",
-              "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time",
-              "preferredId": 4,
-              "preferredEncrypt": false,
-              "direction": "sendrecv"
-            },
-            {
-              "kind": "video",
-              "uri": "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01",
-              "preferredId": 5,
-              "preferredEncrypt": false,
-              "direction": "sendrecv"
-            },
-            {
-              "kind": "audio",
-              "uri": "urn:ietf:params:rtp-hdrext:ssrc-audio-level",
-              "preferredId": 10,
-              "preferredEncrypt": false,
-              "direction": "sendrecv"
-            },
-            {"kind": "video", "uri": "urn:3gpp:video-orientation", "preferredId": 11, "preferredEncrypt": false, "direction": "sendrecv"},
-            {"kind": "video", "uri": "urn:ietf:params:rtp-hdrext:toffset", "preferredId": 12, "preferredEncrypt": false, "direction": "sendrecv"}
-          ]
-        }
-      }
-    }));
-
-    channel.sink.add(jsonEncode({
-      "op": "@connect-transport",
-      "d": {
-        "transportId": "68c0cf24-ced8-4dd1-9d90-cb38de685811",
-        "dtlsParameters": {
-          "role": "client",
-          "fingerprints": [
-            {"algorithm": "sha-256", "value": "D4:BC:B3:AD:C4:99:C0:80:7F:7C:51:C0:31:7A:DE:1B:8A:DC:EF:AC:AE:84:38:BF:73:72:F1:D0:32:75:83:AF"}
-          ]
-        },
-        "direction": "recv"
-      }
-    }));
   }
 
   sendMessage(String text) {

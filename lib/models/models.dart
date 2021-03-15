@@ -73,7 +73,7 @@ class BaseUser {
       avatarUrl: json["avatarUrl"],
       numFollowing: json["numFollowing"],
       numFollowers: json["numFollowers"],
-      currentRoom: Room.fromJson(json["currentRoom"]),
+      currentRoom: json["currentRoom"] != null ? Room.fromJson(json["currentRoom"]) : null,
     );
   }
 //
@@ -220,7 +220,7 @@ class WsParam {
 class ScheduledRoom {
   String roomId;
   String description;
-  String scheduledFor;
+  DateTime scheduledFor;
   int numAttending;
   String name;
   String id;
@@ -233,7 +233,7 @@ class ScheduledRoom {
     return ScheduledRoom(
       roomId: json["roomId"],
       description: json["description"],
-      scheduledFor: json["scheduledFor"],
+      scheduledFor: DateTime.parse(json["scheduledFor"]),
       numAttending: json["numAttending"],
       name: json["name"],
       id: json["id"],

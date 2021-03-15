@@ -2,6 +2,7 @@ import 'package:dogehouse_flutter/models/models.dart';
 import 'package:dogehouse_flutter/resources/palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class HomeItemPlanned extends StatelessWidget {
   final ScheduledRoom homeItemModel;
@@ -51,7 +52,7 @@ class HomeItemPlanned extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.only(left: 5),
                                 child: Text(
-                                  homeItemModel.scheduledFor.toString(),
+                                  DateFormat('dd.MM.yyyy, kk:mm').format(homeItemModel.scheduledFor),
                                   style: TextStyle(color: Palette.lightWhite),
                                 ),
                               )

@@ -1,7 +1,12 @@
+import 'package:dogehouse_flutter/models/models.dart';
 import 'package:dogehouse_flutter/resources/palette.dart';
 import 'package:flutter/material.dart';
 
 class PeopleItem extends StatelessWidget {
+  final BaseUser baseUser;
+
+  PeopleItem(this.baseUser);
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -17,7 +22,7 @@ class PeopleItem extends StatelessWidget {
                   shape: BoxShape.circle,
                   image: DecorationImage(
                     fit: BoxFit.cover,
-                    image: NetworkImage('https://avatars.githubusercontent.com/u/7872329?s=400&u=f41fcb80dc9ce32a809caf9a6c4d9bf31c6ae11a&v=4'),
+                    image: NetworkImage(baseUser.avatarUrl),
                   ),
                 ),
               ),
@@ -27,16 +32,17 @@ class PeopleItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Lauren Miller',
+                      baseUser.displayName,
                       style: TextStyle(color: Palette.lightWhite, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 1),
-                      child: Text(
-                        'The Developers',
-                        style: TextStyle(color: Palette.lightBlue, fontWeight: FontWeight.bold, fontSize: 13),
+                    if (baseUser.currentRoom != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(
+                          baseUser.currentRoom.name,
+                          style: TextStyle(color: Palette.lightBlue, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               )
